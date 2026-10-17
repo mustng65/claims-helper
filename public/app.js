@@ -31,6 +31,9 @@ const dedTotal = document.querySelector("#ded-total");
 const copayTotal = document.querySelector("#copay-total");
 const coinsTotal = document.querySelector("#coins-total");
 const costShareTotal = document.querySelector("#cost-share-total");
+const chargesTotal = document.querySelector("#charges-total");
+const savdiscTotal = document.querySelector("#savdisc-total");
+const amountPaidTotal = document.querySelector("#amount-paid-total");
 let loadedClaims = null;
 let selectedYear = null;
 let defaultYear = null;
@@ -202,13 +205,19 @@ function renderYearSummary(claims) {
     sum.ded += parseAmountCents(claim["Ded"]);
     sum.copay += parseAmountCents(claim["CoPay"]);
     sum.coins += claim.CoInsCents;
+    sum.charges += parseAmountCents(claim["Total Charges"]);
+    sum.savdisc += parseAmountCents(claim["SavDisc"]);
+    sum.amountPaid += parseAmountCents(claim["Amount Paid"]);
     return sum;
-  }, { ded: 0, copay: 0, coins: 0 });
+  }, { ded: 0, copay: 0, coins: 0, charges: 0, savdisc: 0, amountPaid: 0 });
 
   dedTotal.textContent = formatCurrencyCents(totals.ded);
   copayTotal.textContent = formatCurrencyCents(totals.copay);
   coinsTotal.textContent = formatCurrencyCents(totals.coins);
   costShareTotal.textContent = formatCurrencyCents(totals.ded + totals.copay + totals.coins);
+  chargesTotal.textContent = formatCurrencyCents(totals.charges);
+  savdiscTotal.textContent = formatCurrencyCents(totals.savdisc);
+  amountPaidTotal.textContent = formatCurrencyCents(totals.amountPaid);
 }
 
 function populateYearTabs(claims) {
