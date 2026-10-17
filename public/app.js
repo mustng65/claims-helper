@@ -403,9 +403,10 @@ function groupClaimsByPrefix(claims) {
 }
 
 function renderTable(headers, groups) {
+  const visibleHeaders = headers.filter((header) => header !== "Provider");
   const headerRow = document.createElement("tr");
 
-  headers.forEach((header) => {
+  visibleHeaders.forEach((header) => {
     const cell = document.createElement("th");
     cell.scope = "col";
     cell.textContent = header;
@@ -420,8 +421,8 @@ function renderTable(headers, groups) {
     const groupRow = document.createElement("tr");
     groupRow.className = "group-row";
     const groupCell = document.createElement("td");
-    groupCell.colSpan = headers.length;
-    groupCell.textContent = `Claim prefix ${group.label} · ${group.claims.length} ${group.claims.length === 1 ? "record" : "records"}`;
+    groupCell.colSpan = visibleHeaders.length;
+    groupCell.textContent = `Claim ${group.label} · ${group.claims.length} ${group.claims.length === 1 ? "record" : "records"}`;
     groupRow.append(groupCell);
     tbody.append(groupRow);
 
@@ -443,9 +444,19 @@ function renderTable(headers, groups) {
       tableRow.className = rowClasses.join(" ");
       tableRow.title = rowWarnings.join(" ");
 
-      headers.forEach((header) => {
+      visibleHeaders.forEach((header) => {
         const cell = document.createElement("td");
-        cell.textContent = claim[header];
+        if (header === "Claim Number") {
+          const claimNumber = document.createElement("span");
+          claimNumber.className = "claim-number";
+          claimNumber.textContent = claim["Claim Number"];
+          const provider = document.createElement("span");
+          provider.className = "claim-provider";
+          provider.textContent = claim.Provider;
+          cell.append(claimNumber, provider);
+        } else {
+          cell.textContent = claim[header];
+        }
         tableRow.append(cell);
       });
       tbody.append(tableRow);
@@ -455,7 +466,7 @@ function renderTable(headers, groups) {
   if (groups.length === 0) {
     const emptyRow = document.createElement("tr");
     const emptyCell = document.createElement("td");
-    emptyCell.colSpan = headers.length;
+    emptyCell.colSpan = visibleHeaders.length;
     emptyCell.textContent = "No claims found for this service date.";
     emptyRow.append(emptyCell);
     tbody.append(emptyRow);

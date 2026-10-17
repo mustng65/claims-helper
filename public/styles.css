@@ -17,7 +17,7 @@ body {
 }
 
 .app {
-  width: 90vw;
+  width: 80vw;
   margin: 44px auto;
 }
 
@@ -523,6 +523,22 @@ td {
   border-bottom: 1px solid #e8edf1;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.claim-number,
+.claim-provider {
+  display: block;
+}
+
+.claim-number {
+  font-weight: 600;
+}
+
+.claim-provider {
+  margin-top: 3px;
+  color: #667085;
+  font-size: 0.82rem;
+  font-weight: 400;
 }
 
 th {

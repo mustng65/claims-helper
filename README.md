@@ -16,6 +16,8 @@ Year, service-date, and status controls are consolidated in a compact slide-out 
 
 Records are grouped automatically by the claim-number prefix before its trailing revision marker (`R` followed by digits) and sorted by revision number within each group.
 
+The table combines `Claim Number` and `Provider` into one column, showing the provider name subtly beneath the claim number.
+
 Use the status checkboxes to show any combination of `Pending`, `Paid`, and `Needs Review` records. All statuses are selected by default, and **Select all** restores the full status selection.
 
 The summary above the table shows the selected year's totals for `Ded`, `CoPay`, and `CoIns`, plus their combined total. Each record's calculated `CoIns` amount is accumulated in cents for the summary. Currency values in accounting parentheses (for example, `($18,492.68)`) are treated as negative. Summary totals cover the full selected year and do not change when filtering the table by an exact service date.
