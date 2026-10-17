@@ -266,6 +266,8 @@ function parseClaimsExport(records) {
   }
 
   const sourceHeaders = [...headers];
+  headers.splice(headers.indexOf("Service Date"), 1);
+  headers.unshift("Service Date");
   headers.splice(headers.indexOf("CoPay") + 1, 0, "CoIns");
   headers.push("Status");
   const rows = records.slice(1).map((values) => {

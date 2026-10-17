@@ -22,7 +22,15 @@ body {
 }
 
 .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
   margin-bottom: 32px;
+}
+
+.page-heading {
+  min-width: 0;
 }
 
 .eyebrow {
@@ -46,7 +54,6 @@ h1 {
 }
 
 .intro,
-.loader-copy p,
 .row-count {
   color: #526477;
 }
@@ -57,7 +64,6 @@ h1 {
   line-height: 1.6;
 }
 
-.loader,
 .preview {
   border: 1px solid #dce3e9;
   border-radius: 12px;
@@ -65,24 +71,18 @@ h1 {
   box-shadow: 0 4px 18px rgb(23 33 43 / 4%);
 }
 
-.loader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 24px;
-}
-
-.loader-copy h2,
 .preview h2 {
   margin-bottom: 6px;
   font-size: 1.05rem;
 }
 
-.loader-copy p,
 .row-count {
   margin-bottom: 0;
   font-size: 0.9rem;
+}
+
+.header-upload {
+  flex: 0 0 auto;
 }
 
 #csv-file {
@@ -557,9 +557,10 @@ tbody tr:last-child td {
     margin: 36px auto;
   }
 
-  .loader {
+  .page-header {
     align-items: flex-start;
     flex-direction: column;
+    gap: 16px;
   }
 
   .preview-header {

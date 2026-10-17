@@ -11,18 +11,15 @@
   <body>
     <main class="app">
       <header class="page-header">
-        <h1>Claims Helper</h1>
-        <p class="intro">Help you analyze your claims data by uploading a CSV file.</p>
-      </header>
-
-      <section class="loader" aria-labelledby="upload-title">
-        <div class="loader-copy">
-          <h2 id="upload-title">Select a claims export file</h2>
-          <p>Upload a CSV file containing claims data to view and analyze it.</p>
+        <div class="page-heading">
+          <h1>Claims Helper</h1>
+          <p class="intro">Help you analyze your claims data by uploading a CSV file.</p>
         </div>
-        <label class="file-button" for="csv-file">Choose CSV file</label>
-        <input id="csv-file" type="file" accept=".csv,text/csv">
-      </section>
+        <div class="header-upload">
+          <input id="csv-file" type="file" accept=".csv,text/csv">
+          <label class="file-button" for="csv-file">Choose CSV file</label>
+        </div>
+      </header>
 
       <p id="status" class="status" role="status" aria-live="polite">No file selected.</p>
 
