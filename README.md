@@ -31,3 +31,29 @@ The preview includes a calculated `CoIns` column immediately after `CoPay`: `Tot
 The final `Status` column is `Pending` when `SavDisc` is blank, `Paid` when `Total Charges` equals the sum of `SavDisc`, `Ded`, `CoPay`, `CoIns`, and `Amount Paid`, and `Needs Review` otherwise. For claim-prefix groups with multiple records, the group status overrides the individual statuses: the app sums `Inelig` and `Amount Paid` across the group and marks every record `Needs Review` when that sum is zero or less, otherwise `Paid`.
 
 Set the `PORT` environment variable to use a different port.
+
+## Run with Docker
+
+Build the image from the repository root:
+
+```sh
+docker build -t claims-helper .
+```
+
+Run the app and open <http://localhost:3000>:
+
+```sh
+docker run --rm -p 3000:3000 claims-helper
+```
+
+To use a different host port, map it to the container's port 3000 (for example, `-p 8080:3000`), then open <http://localhost:8080>.
+
+## Publish with GitHub Actions
+
+The **Build and publish Docker image** workflow builds the image for pull requests targeting `main`. On pushes to `main` and version tags (`v*`), it publishes the image to GitHub Container Registry:
+
+```sh
+docker pull ghcr.io/mustng65/claims-helper:latest
+```
+
+Version tags are also published using the matching tag name, such as `ghcr.io/mustng65/claims-helper:v1.0.0`. The workflow uses the repository's `GITHUB_TOKEN`; no additional registry secrets are required.
