@@ -298,6 +298,23 @@ function parseClaimsExport(records) {
     return claim;
   });
 
+  groupClaimsByPrefix(rows).forEach((group) => {
+    if (group.claims.length < 2) return;
+
+    const ineligibleTotal = group.claims.reduce((total, claim) => (
+      total + parseAmountCents(claim["Inelig"])
+    ), 0);
+
+    const PaidTotal = group.claims.reduce((total, claim) => (
+      total + parseAmountCents(claim["Amount Paid"])
+    ), 0);
+
+    const groupStatus = (ineligibleTotal > 0 && PaidTotal <= 0) ? "Needs Review" : "Paid";
+    group.claims.forEach((claim) => {
+      claim.Status = groupStatus;
+    });
+  });
+
   return { headers, rows };
 }
 
@@ -437,7 +454,7 @@ function renderTable(headers, groups) {
 
     group.claims.forEach((claim) => {
       const tableRow = document.createElement("tr");
-      const hasIneligibleAmount = parseAmount(claim["Inelig"]) > 0;
+      const hasNeedsReview = claim["Status"] === "Needs Review";
       const hasCostShare = parseAmount(claim["Ded"]) > 0 || parseAmount(claim["CoPay"]) > 0;
       const rowClasses = [];
       const rowWarnings = [];
@@ -446,9 +463,9 @@ function renderTable(headers, groups) {
         rowClasses.push("info-row");
         rowWarnings.push("Deductible or copay is greater than zero.");
       }
-      if (hasIneligibleAmount) {
+      if (hasNeedsReview) {
         rowClasses.push("warning-row");
-        rowWarnings.push("Ineligible amount is greater than zero.");
+        rowWarnings.push("This claim needs review.");
       }
       tableRow.className = rowClasses.join(" ");
       tableRow.title = rowWarnings.join(" ");

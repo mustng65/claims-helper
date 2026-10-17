@@ -28,6 +28,6 @@ Records with a `Ded` or `CoPay` amount greater than zero are highlighted in an i
 
 The preview includes a calculated `CoIns` column immediately after `CoPay`: `Total Charges - SavDisc - Ded - CoPay - Amount Paid`. Blank amounts are treated as zero, and the result is displayed as currency.
 
-The final `Status` column is `Pending` when `SavDisc` is blank, `Paid` when `Total Charges` equals the sum of `SavDisc`, `Ded`, `CoPay`, `CoIns`, and `Amount Paid`, and `Needs Review` otherwise.
+The final `Status` column is `Pending` when `SavDisc` is blank, `Paid` when `Total Charges` equals the sum of `SavDisc`, `Ded`, `CoPay`, `CoIns`, and `Amount Paid`, and `Needs Review` otherwise. For claim-prefix groups with multiple records, the group status overrides the individual statuses: the app sums `Inelig` and `Amount Paid` across the group and marks every record `Needs Review` when that sum is zero or less, otherwise `Paid`.
 
 Set the `PORT` environment variable to use a different port.
