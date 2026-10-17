@@ -9,16 +9,18 @@
 
 * {
   box-sizing: border-box;
+  max-height: 85vh;
 }
 
 body {
   min-width: 320px;
   margin: 0;
+
 }
 
 .app {
   width: 80vw;
-  margin: 44px auto;
+  margin: 24px auto;
 }
 
 .page-header {
@@ -110,7 +112,7 @@ h1 {
   background: #104dcc;
 }
 
-#csv-file:focus-visible + .file-button {
+#csv-file:focus-visible+.file-button {
   outline: 3px solid #8bb5ff;
   outline-offset: 3px;
 }
@@ -319,7 +321,7 @@ h1 {
 }
 
 .year-filter h4,
-.date-search > label,
+.date-search>label,
 .status-filter legend {
   display: block;
   margin: 0 0 9px;

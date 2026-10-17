@@ -102,6 +102,7 @@ fileInput.addEventListener("change", async () => {
   serviceDateInput.disabled = true;
   clearDateButton.disabled = true;
   statusMessage.classList.remove("error");
+  statusMessage.hidden = false;
   statusMessage.textContent = `Loading ${file.name}…`;
 
   try {
@@ -115,7 +116,7 @@ fileInput.addEventListener("change", async () => {
     renderFilteredClaims();
     fileName.textContent = file.name;
     preview.hidden = false;
-    statusMessage.textContent = "CSV loaded, grouped by claim-number prefix, and ready to search by service date.";
+    statusMessage.hidden = true;
   } catch (error) {
     statusMessage.classList.add("error");
     statusMessage.textContent = error instanceof Error
