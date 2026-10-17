@@ -20,7 +20,7 @@ The table combines `Claim Number` and `Provider` into one column, showing the pr
 
 Use the status checkboxes to show any combination of `Pending`, `Paid`, and `Needs Review` records. All statuses are selected by default, and **Select all** restores the full status selection.
 
-The summary above the table shows the selected year's totals for `Ded`, `CoPay`, and `CoIns`, plus their combined total. A second summary row shows totals for `Total Charges`, `SavDisc`, and `Amount Paid`. Each record's calculated `CoIns` amount is accumulated in cents for the summary. Currency values in accounting parentheses (for example, `($18,492.68)`) are treated as negative. Summary totals cover the full selected year and do not change when filtering the table by an exact service date.
+The selected year's totals appear in a left-side summary panel beside the main claims table. The panel shows totals for `Ded`, `CoPay`, and `CoIns`, their combined total, plus a second row with `Total Charges`, `SavDisc`, and `Amount Paid`. On narrow screens, the summary stacks above the table. Each record's calculated `CoIns` amount is accumulated in cents for the summary. Currency values in accounting parentheses (for example, `($18,492.68)`) are treated as negative. Summary totals cover the full selected year and do not change when filtering the table by an exact service date.
 
 Records with an `Inelig` amount greater than zero are highlighted in a warning color.
 
