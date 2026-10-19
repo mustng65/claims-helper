@@ -1,16 +1,19 @@
-# CSV Loader
+# Claims Helper
 
-A dependency-free Node.js web app for opening and previewing claims-export CSV files. CSV files are read locally in the browser and are not uploaded to the server.
+A Node.js web app for importing and previewing claims-export CSV files. Imported claims are stored in a SQLite database on the server.
 
 ## Run
 
 Requires Node.js 18 or newer.
 
 ```sh
+cd src
 npm start
 ```
 
-Open <http://localhost:3000>, then choose a claims-export `.csv` file to load and preview it. The export must include the `Claim Number`, `Provider`, `Service Date`, `Total Charges`, `SavDisc`, `Inelig`, `Ded`, `CoPay`, and `Amount Paid` columns.
+Open <http://localhost:3000>, then choose a claims-export `.csv` file to import it. The export must include the `Claim Number`, `Provider`, `Service Date`, `Total Charges`, `SavDisc`, `Inelig`, `Ded`, `CoPay`, and `Amount Paid` columns. Claims are matched by `Claim Number`: new claims are inserted, changed claims are updated, and unchanged claims are left as-is. Claims omitted from a later upload remain in the database and appear alongside new imports. The page loads stored claims automatically when opened.
+
+By default, the database is written to `src/data/claims.sqlite` locally and `/app/data/claims.sqlite` in Docker. Set `CLAIMS_DB_PATH` to choose another database file.
 
 Year, service-date, and status controls are consolidated in a compact slide-out **Filters** drawer. The preview toolbar summarizes current selections and shows how many filters differ from their defaults. Open the drawer to change filters; selections stay applied when it is closed. The most recent service year is selected by default; records with invalid or missing service dates are available under **Unknown**. Use the service-date field to filter the selected year to an exact date and status checkboxes to choose which statuses to show. **Reset filters** restores the most recent year, clears the date, and selects every status.
 
@@ -40,10 +43,10 @@ Build the image from the repository root:
 docker build -t claims-helper .
 ```
 
-Run the app and open <http://localhost:3000>:
+Run the app with a named Docker volume so the database survives container removal, then open <http://localhost:3000>:
 
 ```sh
-docker run --rm -p 3000:3000 claims-helper
+docker run --rm -p 3000:3000 -v claims-data:/app/data claims-helper
 ```
 
 To use a different host port, map it to the container's port 3000 (for example, `-p 8080:3000`), then open <http://localhost:8080>.

@@ -12,8 +12,9 @@ const REQUIRED_COLUMNS = [
 
 const fileInput = document.querySelector("#csv-file");
 const statusMessage = document.querySelector("#status");
+const statusText = document.querySelector("#status-text");
+const dismissStatusButton = document.querySelector("#dismiss-status");
 const preview = document.querySelector("#preview");
-const fileName = document.querySelector("#file-name");
 const rowCount = document.querySelector("#row-count");
 const table = document.querySelector("#csv-table");
 const serviceDateInput = document.querySelector("#service-date");
@@ -37,8 +38,10 @@ const amountPaidTotal = document.querySelector("#amount-paid-total");
 let loadedClaims = null;
 let selectedYear = null;
 let defaultYear = null;
+let toastTimeout = null;
 const CLAIM_STATUSES = ["Pending", "Paid", "Needs Review"];
 
+dismissStatusButton.addEventListener("click", hideToast);
 openFiltersButton.addEventListener("click", () => filtersDialog.showModal());
 closeFiltersButton.addEventListener("click", () => filtersDialog.close());
 filtersDialog.addEventListener("click", (event) => {
@@ -101,29 +104,85 @@ fileInput.addEventListener("change", async () => {
   serviceDateInput.value = "";
   serviceDateInput.disabled = true;
   clearDateButton.disabled = true;
-  statusMessage.classList.remove("error");
-  statusMessage.hidden = false;
-  statusMessage.textContent = `Loading ${file.name}…`;
+  showToast(`Loading ${file.name}…`, "info", 0);
 
   try {
     const records = parseCsv(await file.text());
-    const claims = parseClaimsExport(records);
+    parseClaimsExport(records);
+    const result = await requestClaims("/api/claims", {
+      method: "POST",
+      headers: records[0].map((header) => header.trim()),
+      records: records.slice(1),
+    });
 
-    loadedClaims = claims;
-    populateYearTabs(claims.rows);
-    populateStatusFilters();
-    serviceDateInput.disabled = false;
-    renderFilteredClaims();
-    fileName.textContent = file.name;
-    preview.hidden = false;
-    statusMessage.hidden = true;
+    displayClaims(result.headers, result.records);
+    showToast(`Created ${result.inserted} new, ${result.updated} updated, and ${result.unchanged} unchanged claims.`, "success");
   } catch (error) {
-    statusMessage.classList.add("error");
-    statusMessage.textContent = error instanceof Error
-      ? `Could not load claims export: ${error.message}`
-      : "Could not load claims export due to an unknown error.";
+    showToast(error instanceof Error
+      ? `Could not import claims export: ${error.message}`
+      : "Could not import claims export due to an unknown error.", "error");
   }
 });
+
+function showToast(message, type, duration = 6000) {
+  clearTimeout(toastTimeout);
+  statusMessage.className = `toast ${type}`;
+  statusText.textContent = message;
+  statusMessage.hidden = false;
+  if (duration > 0) {
+    toastTimeout = setTimeout(hideToast, duration);
+  }
+}
+
+function hideToast() {
+  clearTimeout(toastTimeout);
+  statusMessage.hidden = true;
+}
+
+async function requestClaims(url, body) {
+  const response = await fetch(url, {
+    method: body ? "POST" : "GET",
+    headers: body ? { "Content-Type": "application/json" } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error("The server returned an invalid response.");
+  }
+  if (!response.ok) {
+    throw new Error(result.error || `The server returned ${response.status}.`);
+  }
+  return result;
+}
+
+function displayClaims(headers, records) {
+  const claims = parseClaimsExport([headers, ...records]);
+  loadedClaims = claims;
+  populateYearTabs(claims.rows);
+  populateStatusFilters();
+  serviceDateInput.disabled = false;
+  renderFilteredClaims();
+  preview.hidden = false;
+}
+
+async function loadStoredClaims() {
+  try {
+    const result = await requestClaims("/api/claims");
+    if (result.records.length === 0) {
+      return;
+    }
+
+    displayClaims(result.headers, result.records);
+  } catch (error) {
+    showToast(error instanceof Error
+      ? `Could not load stored claims: ${error.message}`
+      : "Could not load stored claims due to an unknown error.", "error");
+  }
+}
+
+loadStoredClaims();
 
 function renderFilteredClaims() {
   if (!loadedClaims || selectedYear === null) return;

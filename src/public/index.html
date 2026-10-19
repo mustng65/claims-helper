@@ -18,18 +18,18 @@
         </div>
         <div class="header-upload">
           <input id="csv-file" type="file" accept=".csv,text/csv">
-          <label class="file-button" for="csv-file">Choose CSV file</label>
+          <label class="file-button" for="csv-file">Load CSV file</label>
         </div>
       </header>
 
-      <p id="status" class="status" role="status" aria-live="polite">No file selected.</p>
+      <div id="status" class="toast" role="status" aria-live="polite" hidden>
+        <span id="status-text"></span>
+        <button id="dismiss-status" class="toast-dismiss" type="button" aria-label="Dismiss notification">×</button>
+      </div>
 
       <section id="preview" class="preview" aria-label="CSV preview" hidden>
         <div class="preview-header">
-          <div>
-            <h2 id="file-name"></h2>
-            <p id="row-count" class="row-count"></p>
-          </div>
+          <p id="row-count" class="row-count"></p>
           <div class="filter-launcher">
             <p id="filter-summary" class="filter-summary"></p>
             <button id="open-filters" class="filter-toggle" type="button" aria-haspopup="dialog" aria-controls="filters-dialog">
