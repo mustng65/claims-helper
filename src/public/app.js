@@ -107,23 +107,73 @@ fileInput.addEventListener("change", async () => {
 
   try {
     const records = parseCsv(await file.text());
-    const claims = parseClaimsExport(records);
+    parseClaimsExport(records);
+    const result = await requestClaims("/api/claims", {
+      method: "POST",
+      headers: records[0].map((header) => header.trim()),
+      records: records.slice(1),
+    });
 
-    loadedClaims = claims;
-    populateYearTabs(claims.rows);
-    populateStatusFilters();
-    serviceDateInput.disabled = false;
-    renderFilteredClaims();
-    fileName.textContent = file.name;
-    preview.hidden = false;
+    displayClaims(result.headers, result.records, file.name);
+    statusMessage.textContent = `Created ${result.inserted} new, ${result.updated} updated, and ${result.unchanged} unchanged claims.`;
+  } catch (error) {
+    statusMessage.classList.add("error");
+    statusMessage.textContent = error instanceof Error
+      ? `Could not import claims export: ${error.message}`
+      : "Could not import claims export due to an unknown error.";
+  }
+});
+
+async function requestClaims(url, body) {
+  const response = await fetch(url, {
+    method: body ? "POST" : "GET",
+    headers: body ? { "Content-Type": "application/json" } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error("The server returned an invalid response.");
+  }
+  if (!response.ok) {
+    throw new Error(result.error || `The server returned ${response.status}.`);
+  }
+  return result;
+}
+
+function displayClaims(headers, records, label) {
+  const claims = parseClaimsExport([headers, ...records]);
+  loadedClaims = claims;
+  populateYearTabs(claims.rows);
+  populateStatusFilters();
+  serviceDateInput.disabled = false;
+  renderFilteredClaims();
+  fileName.textContent = label;
+  preview.hidden = false;
+}
+
+async function loadStoredClaims() {
+  statusMessage.hidden = false;
+  statusMessage.textContent = "Loading stored claims…";
+  try {
+    const result = await requestClaims("/api/claims");
+    if (result.records.length === 0) {
+      statusMessage.textContent = "No stored claims. Choose a CSV file to import.";
+      return;
+    }
+
+    displayClaims(result.headers, result.records, "Stored claims");
     statusMessage.hidden = true;
   } catch (error) {
     statusMessage.classList.add("error");
     statusMessage.textContent = error instanceof Error
-      ? `Could not load claims export: ${error.message}`
-      : "Could not load claims export due to an unknown error.";
+      ? `Could not load stored claims: ${error.message}`
+      : "Could not load stored claims due to an unknown error.";
   }
-});
+}
+
+loadStoredClaims();
 
 function renderFilteredClaims() {
   if (!loadedClaims || selectedYear === null) return;

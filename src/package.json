@@ -2,8 +2,11 @@
   "name": "csv-loader",
   "version": "1.0.0",
   "private": true,
-  "description": "A small web app for opening and previewing CSV files.",
+  "description": "A web app for importing and previewing claims-export CSV files.",
   "scripts": {
     "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
   }
 }
