@@ -126,15 +126,50 @@ h1 {
   outline-offset: 3px;
 }
 
-.status {
-  min-height: 24px;
-  margin: 16px 2px 20px;
-  color: #526477;
+.toast {
+  position: fixed;
+  z-index: 10;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: min(440px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border: 1px solid #b7d3f8;
+  border-radius: 8px;
+  color: #17345c;
+  background: #eff6ff;
+  box-shadow: 0 8px 28px rgb(23 33 43 / 18%);
   font-size: 0.9rem;
 }
 
-.status.error {
+.toast[hidden] {
+  display: none;
+}
+
+.toast.error {
+  border-color: #f0b8b4;
   color: #b42318;
+  background: #fff3f2;
+}
+
+.toast.success {
+  border-color: #a6d8b5;
+  color: #176b36;
+  background: #effaf2;
+}
+
+.toast-dismiss {
+  flex: 0 0 auto;
+  padding: 0 2px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .preview {
@@ -148,11 +183,6 @@ h1 {
   gap: 20px;
   padding: 20px 24px;
   border-bottom: 1px solid #e8edf1;
-}
-
-.preview-header h2 {
-  margin-bottom: 6px;
-  overflow-wrap: anywhere;
 }
 
 .filter-launcher {

@@ -12,8 +12,9 @@ const REQUIRED_COLUMNS = [
 
 const fileInput = document.querySelector("#csv-file");
 const statusMessage = document.querySelector("#status");
+const statusText = document.querySelector("#status-text");
+const dismissStatusButton = document.querySelector("#dismiss-status");
 const preview = document.querySelector("#preview");
-const fileName = document.querySelector("#file-name");
 const rowCount = document.querySelector("#row-count");
 const table = document.querySelector("#csv-table");
 const serviceDateInput = document.querySelector("#service-date");
@@ -37,8 +38,10 @@ const amountPaidTotal = document.querySelector("#amount-paid-total");
 let loadedClaims = null;
 let selectedYear = null;
 let defaultYear = null;
+let toastTimeout = null;
 const CLAIM_STATUSES = ["Pending", "Paid", "Needs Review"];
 
+dismissStatusButton.addEventListener("click", hideToast);
 openFiltersButton.addEventListener("click", () => filtersDialog.showModal());
 closeFiltersButton.addEventListener("click", () => filtersDialog.close());
 filtersDialog.addEventListener("click", (event) => {
@@ -101,9 +104,7 @@ fileInput.addEventListener("change", async () => {
   serviceDateInput.value = "";
   serviceDateInput.disabled = true;
   clearDateButton.disabled = true;
-  statusMessage.classList.remove("error");
-  statusMessage.hidden = false;
-  statusMessage.textContent = `Loading ${file.name}…`;
+  showToast(`Loading ${file.name}…`, "info", 0);
 
   try {
     const records = parseCsv(await file.text());
@@ -114,15 +115,29 @@ fileInput.addEventListener("change", async () => {
       records: records.slice(1),
     });
 
-    displayClaims(result.headers, result.records, file.name);
-    statusMessage.textContent = `Created ${result.inserted} new, ${result.updated} updated, and ${result.unchanged} unchanged claims.`;
+    displayClaims(result.headers, result.records);
+    showToast(`Created ${result.inserted} new, ${result.updated} updated, and ${result.unchanged} unchanged claims.`, "success");
   } catch (error) {
-    statusMessage.classList.add("error");
-    statusMessage.textContent = error instanceof Error
+    showToast(error instanceof Error
       ? `Could not import claims export: ${error.message}`
-      : "Could not import claims export due to an unknown error.";
+      : "Could not import claims export due to an unknown error.", "error");
   }
 });
+
+function showToast(message, type, duration = 6000) {
+  clearTimeout(toastTimeout);
+  statusMessage.className = `toast ${type}`;
+  statusText.textContent = message;
+  statusMessage.hidden = false;
+  if (duration > 0) {
+    toastTimeout = setTimeout(hideToast, duration);
+  }
+}
+
+function hideToast() {
+  clearTimeout(toastTimeout);
+  statusMessage.hidden = true;
+}
 
 async function requestClaims(url, body) {
   const response = await fetch(url, {
@@ -142,34 +157,28 @@ async function requestClaims(url, body) {
   return result;
 }
 
-function displayClaims(headers, records, label) {
+function displayClaims(headers, records) {
   const claims = parseClaimsExport([headers, ...records]);
   loadedClaims = claims;
   populateYearTabs(claims.rows);
   populateStatusFilters();
   serviceDateInput.disabled = false;
   renderFilteredClaims();
-  fileName.textContent = label;
   preview.hidden = false;
 }
 
 async function loadStoredClaims() {
-  statusMessage.hidden = false;
-  statusMessage.textContent = "Loading stored claims…";
   try {
     const result = await requestClaims("/api/claims");
     if (result.records.length === 0) {
-      statusMessage.textContent = "No stored claims. Choose a CSV file to import.";
       return;
     }
 
-    displayClaims(result.headers, result.records, "Stored claims");
-    statusMessage.hidden = true;
+    displayClaims(result.headers, result.records);
   } catch (error) {
-    statusMessage.classList.add("error");
-    statusMessage.textContent = error instanceof Error
+    showToast(error instanceof Error
       ? `Could not load stored claims: ${error.message}`
-      : "Could not load stored claims due to an unknown error.";
+      : "Could not load stored claims due to an unknown error.", "error");
   }
 }
 
