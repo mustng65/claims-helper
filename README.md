@@ -51,6 +51,20 @@ docker run --rm -p 3000:3000 -v claims-data:/app/data claims-helper
 
 To use a different host port, map it to the container's port 3000 (for example, `-p 8080:3000`), then open <http://localhost:8080>.
 
+### Docker Compose
+
+```sh
+services:
+  claims-helper:
+    image: ghcr.io/mustng65/claims-helper:latest
+    container_name: claims-helper
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "3050:3000"
+    restart: unless-stopped
+```
+
 ## Publish with GitHub Actions
 
 The **Build and publish Docker image** workflow builds the image for pull requests targeting `main`. On pushes to `main` and version tags (`v*`), it publishes the image to GitHub Container Registry:
