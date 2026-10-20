@@ -27,7 +27,7 @@ database.exec(`
   )
 `);
 
-const selectClaims = database.prepare("SELECT data FROM claims ORDER BY id");
+const selectClaims = database.prepare("SELECT data FROM claims ORDER BY claim_number DESC");
 const findClaim = database.prepare("SELECT data FROM claims WHERE claim_number = ?");
 const insertClaim = database.prepare(`
   INSERT INTO claims (claim_number, data, created_at, updated_at)
