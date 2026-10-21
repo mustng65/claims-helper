@@ -110,6 +110,29 @@
           </div>
         </div>
       </section>
+      <dialog id="review-dialog" class="review-dialog" aria-labelledby="review-title">
+        <form id="review-form">
+          <div class="drawer-header">
+            <div>
+              <h2 id="review-title">Review claim</h2>
+              <p id="review-claim-number"></p>
+            </div>
+            <button id="close-review" class="drawer-close" type="button" aria-label="Close review">×</button>
+          </div>
+          <div class="review-content">
+            <label class="review-checkbox">
+              <input id="reviewed-checkbox" type="checkbox">
+              <span>Mark as reviewed</span>
+            </label>
+            <label class="review-comment-label" for="review-comment">Comments</label>
+            <textarea id="review-comment" maxlength="5000" rows="6"></textarea>
+            <div class="review-actions">
+              <button id="cancel-review" class="filter-reset" type="button">Cancel</button>
+              <button class="file-button" type="submit">Save review</button>
+            </div>
+          </div>
+        </form>
+      </dialog>
     </main>
   </body>
 </html>
