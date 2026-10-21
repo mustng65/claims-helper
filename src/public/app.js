@@ -35,15 +35,44 @@ const costShareTotal = document.querySelector("#cost-share-total");
 const chargesTotal = document.querySelector("#charges-total");
 const savdiscTotal = document.querySelector("#savdisc-total");
 const amountPaidTotal = document.querySelector("#amount-paid-total");
+const reviewDialog = document.querySelector("#review-dialog");
+const reviewForm = document.querySelector("#review-form");
+const reviewClaimNumber = document.querySelector("#review-claim-number");
+const reviewedCheckbox = document.querySelector("#reviewed-checkbox");
+const reviewComment = document.querySelector("#review-comment");
 let loadedClaims = null;
 let selectedYear = null;
 let defaultYear = null;
 let toastTimeout = null;
-const CLAIM_STATUSES = ["Pending", "Paid", "Needs Review"];
+let editingClaimNumber = null;
+const CLAIM_STATUSES = ["Pending", "Paid", "Needs Review", "Reviewed"];
 
 dismissStatusButton.addEventListener("click", hideToast);
 openFiltersButton.addEventListener("click", () => filtersDialog.showModal());
 closeFiltersButton.addEventListener("click", () => filtersDialog.close());
+document.querySelector("#close-review").addEventListener("click", () => reviewDialog.close());
+document.querySelector("#cancel-review").addEventListener("click", () => reviewDialog.close());
+table.addEventListener("click", (event) => {
+  console.log("table click", event.target);
+  const button = event.target.closest("button[data-review-claim], button[data-view-comment]");
+  if (!button) {
+    document.querySelectorAll(".claim-actions[open]").forEach((openMenu) => {
+      openMenu?.removeAttribute("open");
+    });
+    return;
+  }
+
+  button.closest("details")?.removeAttribute("open");
+  if (button.dataset.reviewClaim) {
+    openReviewDialog(button.dataset.reviewClaim);
+  } else {
+    document.querySelectorAll(".claim-actions[open]").forEach((openMenu) => {
+      openMenu?.removeAttribute("open");
+    });
+    openReviewDialog(button.dataset.viewComment, true);
+  }
+});
+reviewForm.addEventListener("submit", saveClaimReview);
 filtersDialog.addEventListener("click", (event) => {
   if (event.target === filtersDialog) {
     filtersDialog.close();
@@ -95,9 +124,11 @@ fileInput.addEventListener("change", async () => {
   loadedClaims = null;
   selectedYear = null;
   defaultYear = null;
+  editingClaimNumber = null;
   yearTabs.replaceChildren();
   statusOptions.replaceChildren();
   if (filtersDialog.open) filtersDialog.close();
+  if (reviewDialog.open) reviewDialog.close();
   filterSummary.textContent = "";
   activeFilterCount.hidden = true;
   resetFiltersButton.disabled = true;
@@ -115,7 +146,7 @@ fileInput.addEventListener("change", async () => {
       records: records.slice(1),
     });
 
-    displayClaims(result.headers, result.records);
+    displayClaims(result.headers, result.records, result.reviews);
     showToast(`Created ${result.inserted} new, ${result.updated} updated, and ${result.unchanged} unchanged claims.`, "success");
   } catch (error) {
     showToast(error instanceof Error
@@ -139,9 +170,9 @@ function hideToast() {
   statusMessage.hidden = true;
 }
 
-async function requestClaims(url, body) {
+async function requestClaims(url, body, method = body ? "POST" : "GET") {
   const response = await fetch(url, {
-    method: body ? "POST" : "GET",
+    method,
     headers: body ? { "Content-Type": "application/json" } : {},
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -157,14 +188,68 @@ async function requestClaims(url, body) {
   return result;
 }
 
-function displayClaims(headers, records) {
+function displayClaims(headers, records, reviews = {}) {
   const claims = parseClaimsExport([headers, ...records]);
+  claims.rows.forEach((claim) => {
+    const review = reviews[claim["Claim Number"].trim()];
+    claim.reviewed = review?.reviewed ?? false;
+    claim.reviewComment = review?.comment ?? "";
+    claim.originalStatus = claim.Status;
+    if (claim.reviewed) claim.Status = "Reviewed";
+  });
   loadedClaims = claims;
   populateYearTabs(claims.rows);
   populateStatusFilters();
   serviceDateInput.disabled = false;
   renderFilteredClaims();
   preview.hidden = false;
+}
+
+function openReviewDialog(claimNumber, readOnly = false) {
+  const claim = loadedClaims?.rows.find((row) => row["Claim Number"].trim() === claimNumber);
+  if (!claim) return;
+
+  editingClaimNumber = claimNumber;
+  reviewClaimNumber.textContent = claimNumber;
+  reviewedCheckbox.checked = claim.reviewed;
+  reviewedCheckbox.disabled = readOnly;
+  reviewedCheckbox.closest("label").hidden = readOnly;
+  reviewComment.value = claim.reviewComment;
+  reviewComment.readOnly = readOnly;
+  reviewForm.querySelector('button[type="submit"]').hidden = readOnly;
+  document.querySelector("#review-title").textContent = readOnly ? "Review comment" : "Review claim";
+  document.querySelector("#cancel-review").textContent = readOnly ? "Close" : "Cancel";
+  reviewDialog.showModal();
+}
+
+async function saveClaimReview(event) {
+  event.preventDefault();
+  if (!editingClaimNumber || !loadedClaims) return;
+
+  const saveButton = reviewForm.querySelector('button[type="submit"]');
+  saveButton.disabled = true;
+  try {
+    const review = await requestClaims("/api/reviews", {
+      claimNumber: editingClaimNumber,
+      reviewed: reviewedCheckbox.checked,
+      comment: reviewComment.value,
+    }, "PUT");
+    const claim = loadedClaims.rows.find((row) => row["Claim Number"].trim() === review.claimNumber);
+    if (claim) {
+      claim.reviewed = review.reviewed;
+      claim.reviewComment = review.comment;
+      claim.Status = review.reviewed ? "Reviewed" : claim.originalStatus;
+    }
+    reviewDialog.close();
+    renderFilteredClaims();
+    showToast(`Review saved for claim ${review.claimNumber}.`, "success");
+  } catch (error) {
+    showToast(error instanceof Error
+      ? `Could not save claim review: ${error.message}`
+      : "Could not save claim review due to an unknown error.", "error");
+  } finally {
+    saveButton.disabled = false;
+  }
 }
 
 async function loadStoredClaims() {
@@ -174,7 +259,7 @@ async function loadStoredClaims() {
       return;
     }
 
-    displayClaims(result.headers, result.records);
+    displayClaims(result.headers, result.records, result.reviews);
   } catch (error) {
     showToast(error instanceof Error
       ? `Could not load stored claims: ${error.message}`
@@ -490,9 +575,10 @@ function groupClaimsByPrefix(claims) {
 
 function renderTable(headers, groups) {
   const visibleHeaders = headers.filter((header) => header !== "Provider");
+  const tableHeaders = visibleHeaders;
   const headerRow = document.createElement("tr");
 
-  visibleHeaders.forEach((header) => {
+  tableHeaders.forEach((header) => {
     const cell = document.createElement("th");
     cell.scope = "col";
     cell.textContent = header;
@@ -507,7 +593,7 @@ function renderTable(headers, groups) {
     const groupRow = document.createElement("tr");
     groupRow.className = "group-row";
     const groupCell = document.createElement("td");
-    groupCell.colSpan = visibleHeaders.length;
+    groupCell.colSpan = tableHeaders.length;
     groupCell.textContent = `Claim ${group.label} · ${group.claims.length} ${group.claims.length === 1 ? "record" : "records"}`;
     groupRow.append(groupCell);
     tbody.append(groupRow);
@@ -540,6 +626,52 @@ function renderTable(headers, groups) {
           provider.className = "claim-provider";
           provider.textContent = claim.Provider;
           cell.append(claimNumber, provider);
+        } else if (header === "Status") {
+          const statusContainer = document.createElement("div");
+          statusContainer.className = "status-cell";
+          const status = document.createElement("span");
+          status.textContent = claim.Status;
+          statusContainer.append(status);
+          cell.append(statusContainer);
+          if (claim.Status === "Needs Review" || claim.reviewComment) {
+            const actions = document.createElement("div");
+            actions.className = "status-actions";
+            if (claim.Status === "Needs Review") {
+              const menu = document.createElement("details");
+              menu.className = "claim-actions";
+              const trigger = document.createElement("summary");
+              trigger.className = "claim-actions-trigger";
+              trigger.setAttribute("aria-label", `Actions for claim ${claim["Claim Number"]}`);
+              trigger.title = "Claim actions";
+              trigger.textContent = "⋮";
+              const menuItems = document.createElement("div");
+              menuItems.className = "claim-actions-menu";
+              const reviewButton = document.createElement("button");
+              reviewButton.type = "button";
+              reviewButton.dataset.reviewClaim = claim["Claim Number"].trim();
+              reviewButton.textContent = "Review claim";
+              menuItems.append(reviewButton);
+              menu.append(trigger, menuItems);
+              actions.append(menu);
+            }
+            if (claim.reviewComment) {
+              const commentButton = document.createElement("button");
+              commentButton.type = "button";
+              commentButton.className = "comment-trigger";
+              commentButton.dataset.viewComment = claim["Claim Number"].trim();
+              commentButton.setAttribute("aria-label", `View review comment for claim ${claim["Claim Number"]}`);
+              commentButton.title = "View review comment";
+              const commentIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+              commentIcon.setAttribute("viewBox", "0 0 20 20");
+              commentIcon.setAttribute("aria-hidden", "true");
+              const commentPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+              commentPath.setAttribute("d", "M3 4.5A2.5 2.5 0 0 1 5.5 2h9A2.5 2.5 0 0 1 17 4.5v6a2.5 2.5 0 0 1-2.5 2.5H8l-4.5 4v-5.2A2.5 2.5 0 0 1 3 10.5z");
+              commentIcon.append(commentPath);
+              commentButton.append(commentIcon);
+              actions.append(commentButton);
+            }
+            statusContainer.append(actions);
+          }
         } else {
           cell.textContent = claim[header];
         }
@@ -552,7 +684,7 @@ function renderTable(headers, groups) {
   if (groups.length === 0) {
     const emptyRow = document.createElement("tr");
     const emptyCell = document.createElement("td");
-    emptyCell.colSpan = visibleHeaders.length;
+    emptyCell.colSpan = tableHeaders.length;
     emptyCell.textContent = "No claims found for this service date.";
     emptyRow.append(emptyCell);
     tbody.append(emptyRow);

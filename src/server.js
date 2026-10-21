@@ -22,13 +22,27 @@ database.exec(`
     id INTEGER PRIMARY KEY,
     claim_number TEXT NOT NULL UNIQUE,
     data TEXT NOT NULL,
+    reviewed INTEGER NOT NULL DEFAULT 0,
+    review_comment TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )
 `);
 
-const selectClaims = database.prepare("SELECT data FROM claims ORDER BY claim_number DESC");
+const claimColumns = new Set(database.pragma("table_info(claims)").map(({ name }) => name));
+if (!claimColumns.has("reviewed")) {
+  database.exec("ALTER TABLE claims ADD COLUMN reviewed INTEGER NOT NULL DEFAULT 0");
+}
+if (!claimColumns.has("review_comment")) {
+  database.exec("ALTER TABLE claims ADD COLUMN review_comment TEXT NOT NULL DEFAULT ''");
+}
+
+const selectClaims = database.prepare(`
+  SELECT claim_number, data, reviewed, review_comment
+  FROM claims ORDER BY claim_number DESC
+`);
 const findClaim = database.prepare("SELECT data FROM claims WHERE claim_number = ?");
+const findReview = database.prepare("SELECT reviewed, review_comment FROM claims WHERE claim_number = ?");
 const insertClaim = database.prepare(`
   INSERT INTO claims (claim_number, data, created_at, updated_at)
   VALUES (?, ?, ?, ?)
@@ -36,9 +50,13 @@ const insertClaim = database.prepare(`
 const updateClaim = database.prepare(`
   UPDATE claims SET data = ?, updated_at = ? WHERE claim_number = ?
 `);
+const updateReview = database.prepare(`
+  UPDATE claims SET reviewed = ?, review_comment = ? WHERE claim_number = ?
+`);
 
 function getStoredClaims() {
-  const claims = selectClaims.all().map(({ data }) => JSON.parse(data));
+  const rows = selectClaims.all();
+  const claims = rows.map(({ data }) => JSON.parse(data));
   const headers = [];
   const seenHeaders = new Set();
 
@@ -54,6 +72,10 @@ function getStoredClaims() {
   return {
     headers,
     records: claims.map((claim) => headers.map((header) => claim[header] ?? "")),
+    reviews: Object.fromEntries(rows.map(({ claim_number, reviewed, review_comment }) => [
+      claim_number,
+      { reviewed: Boolean(reviewed), comment: review_comment },
+    ])),
   };
 }
 
@@ -79,7 +101,7 @@ function readJsonBody(request) {
       receivedBytes += chunk.length;
       if (receivedBytes > maxRequestBytes) {
         settled = true;
-        reject(Object.assign(new Error("The uploaded CSV is too large."), { statusCode: 413 }));
+        reject(Object.assign(new Error("The request body is too large."), { statusCode: 413 }));
         request.resume();
       }
     });
@@ -160,6 +182,37 @@ function importClaims(payload) {
   return { ...counts, ...getStoredClaims() };
 }
 
+function saveReview(payload) {
+  if (
+    !payload
+    || typeof payload.claimNumber !== "string"
+    || !payload.claimNumber.trim()
+    || typeof payload.reviewed !== "boolean"
+    || typeof payload.comment !== "string"
+  ) {
+    throw Object.assign(new Error("A claim number, reviewed status, and comment are required."), { statusCode: 400 });
+  }
+  if (payload.comment.length > 5000) {
+    throw Object.assign(new Error("Review comments must be 5,000 characters or fewer."), { statusCode: 400 });
+  }
+
+  const claimNumber = payload.claimNumber.trim();
+  if (!findReview.get(claimNumber)) {
+    throw Object.assign(new Error("The claim was not found."), { statusCode: 404 });
+  }
+
+  updateReview.run(Number(payload.reviewed), payload.comment, claimNumber);
+  return {
+    claimNumber,
+    reviewed: payload.reviewed,
+    comment: payload.comment,
+  };
+}
+
+function getErrorStatusCode(error) {
+  return Number.isInteger(error.statusCode) ? error.statusCode : 500;
+}
+
 const server = http.createServer(async (request, response) => {
   const pathname = new URL(request.url, `http://${request.headers.host || "localhost"}`).pathname;
 
@@ -177,12 +230,27 @@ const server = http.createServer(async (request, response) => {
     try {
       sendJson(response, 200, importClaims(await readJsonBody(request)));
     } catch (error) {
-      const statusCode = Number.isInteger(error.statusCode) ? error.statusCode : 500;
+      const statusCode = getErrorStatusCode(error);
       if (statusCode === 500) {
         console.error("Unable to import claims:", error);
       }
       sendJson(response, statusCode, {
         error: statusCode === 500 ? "Unable to save claims to the database." : error.message,
+      });
+    }
+    return;
+  }
+
+  if (pathname === "/api/reviews" && request.method === "PUT") {
+    try {
+      sendJson(response, 200, saveReview(await readJsonBody(request)));
+    } catch (error) {
+      const statusCode = getErrorStatusCode(error);
+      if (statusCode === 500) {
+        console.error("Unable to save claim review:", error);
+      }
+      sendJson(response, statusCode, {
+        error: statusCode === 500 ? "Unable to save the claim review." : error.message,
       });
     }
     return;

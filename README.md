@@ -21,7 +21,9 @@ Records are grouped automatically by the claim-number prefix before its trailing
 
 The table combines `Claim Number` and `Provider` into one column, showing the provider name subtly beneath the claim number.
 
-Use the status checkboxes to show any combination of `Pending`, `Paid`, and `Needs Review` records. All statuses are selected by default, and **Select all** restores the full status selection.
+For claims with a `Needs Review` status, open the three-dot menu beside the claim number and choose **Review claim** to mark the claim as reviewed and add a comment. Its status then changes to `Reviewed`. A comment icon beside claims with saved comments opens them without adding a table column. Review status and comments are stored separately from imported CSV data, so later CSV uploads update claim details without overwriting reviews. Reviews remain available when the page is reloaded.
+
+Use the status checkboxes to show any combination of `Pending`, `Paid`, `Needs Review`, and `Reviewed` records. All statuses are selected by default, and **Select all** restores the full status selection.
 
 The selected year's totals appear in a left-side summary panel beside the main claims table. The panel shows totals for `Ded`, `CoPay`, and `CoIns`, their combined total, plus a second row with `Total Charges`, `SavDisc`, and `Amount Paid`. On narrow screens, the summary stacks above the table. Each record's calculated `CoIns` amount is accumulated in cents for the summary. Currency values in accounting parentheses (for example, `($18,492.68)`) are treated as negative. Summary totals cover the full selected year and do not change when filtering the table by an exact service date.
 
@@ -31,7 +33,7 @@ Records with a `Ded` or `CoPay` amount greater than zero are highlighted in an i
 
 The preview includes a calculated `CoIns` column immediately after `CoPay`: `Total Charges - SavDisc - Ded - CoPay - Amount Paid`. Blank amounts are treated as zero, and the result is displayed as currency.
 
-The final `Status` column is `Pending` when `SavDisc` is blank, `Paid` when `Total Charges` equals the sum of `SavDisc`, `Ded`, `CoPay`, `CoIns`, and `Amount Paid`, and `Needs Review` otherwise. For claim-prefix groups with multiple records, the group status overrides the individual statuses: the app sums `Inelig` and `Amount Paid` across the group and marks every record `Needs Review` when that sum is zero or less, otherwise `Paid`.
+The final `Status` column is `Pending` when `SavDisc` is blank, `Paid` when `Total Charges` equals the sum of `SavDisc`, `Ded`, `CoPay`, `CoIns`, and `Amount Paid`, and `Needs Review` otherwise. For claim-prefix groups with multiple records, the group status overrides the individual statuses: the app sums `Inelig` and `Amount Paid` across the group and marks every record `Needs Review` when that sum is zero or less, otherwise `Paid`. Claims marked reviewed show `Reviewed` instead of their calculated status.
 
 Set the `PORT` environment variable to use a different port.
 

@@ -499,7 +499,7 @@ h1 {
 
 .preview-content {
   display: grid;
-  grid-template-columns: minmax(200px, 0.15fr) minmax(0, 1fr);
+  grid-template-columns: minmax(175px, 0.15fr) minmax(0, 1fr);
   align-items: start;
 }
 
@@ -563,6 +563,201 @@ h1 {
   overflow: auto;
 }
 
+.review-dialog {
+  width: min(480px, calc(100vw - 32px));
+  max-width: none;
+  padding: 0;
+  border: 1px solid #dce3e9;
+  border-radius: 12px;
+  color: #17212b;
+  background: #fff;
+  box-shadow: 0 16px 48px rgb(23 33 43 / 22%);
+}
+
+.review-dialog::backdrop {
+  background: rgb(23 33 43 / 35%);
+}
+
+.review-dialog .drawer-header {
+  position: static;
+}
+
+.review-checkbox[hidden],
+.review-actions button[hidden] {
+  display: none;
+}
+
+.review-content {
+  display: grid;
+  gap: 12px;
+  padding: 20px 24px 24px;
+}
+
+.review-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 600;
+}
+
+.review-checkbox input {
+  accent-color: #155eef;
+}
+
+.review-comment-label {
+  color: #526477;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.review-content textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5df;
+  border-radius: 7px;
+  color: #17212b;
+  font: inherit;
+  resize: vertical;
+}
+
+.review-content textarea[readonly] {
+  border-color: #e2e8ee;
+  background: #f8fafb;
+}
+
+.review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.review-actions .file-button {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.review-actions .file-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.status-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.claim-actions {
+  position: relative;
+  width: max-content;
+}
+
+.claim-actions-trigger {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 0;
+  border-radius: 4px;
+  color: #526477;
+  background: transparent;
+  font-size: 1.15rem;
+  line-height: 1;
+  list-style: none;
+  cursor: pointer;
+}
+
+.claim-actions-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.claim-actions-trigger:hover {
+  color: #155eef;
+  background: #eef4ff;
+}
+
+.claim-actions-menu {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 145px;
+  padding: 4px;
+  border: 1px solid #dce3e9;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgb(23 33 43 / 16%);
+}
+
+.claim-actions-menu button {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 4px;
+  color: #344054;
+  background: #fff;
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.claim-actions-menu button:hover {
+  color: #155eef;
+  background: #f0f5ff;
+}
+
+.claim-actions-trigger:focus-visible,
+.claim-actions-menu button:focus-visible,
+.review-content textarea:focus-visible {
+  outline: 3px solid #8bb5ff;
+  outline-offset: 2px;
+}
+
+.comment-trigger {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 3px;
+  border: 0;
+  border-radius: 4px;
+  color: #526477;
+  background: transparent;
+  cursor: pointer;
+}
+
+.comment-trigger:hover {
+  color: #155eef;
+  background: #eef4ff;
+}
+
+.comment-trigger svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.comment-trigger:focus-visible {
+  outline: 3px solid #8bb5ff;
+  outline-offset: 2px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -572,11 +767,12 @@ table {
 
 th,
 td {
-  max-width: 360px;
+  max-width: 250px;
   padding: 12px 16px;
   border-bottom: 1px solid #e8edf1;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+  z-index: 1;
 }
 
 .claim-number,
@@ -656,6 +852,10 @@ tbody tr:last-child td {
   }
 
   .drawer-content {
+    padding-inline: 18px;
+  }
+
+  .review-content {
     padding-inline: 18px;
   }
 
