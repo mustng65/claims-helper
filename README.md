@@ -4,14 +4,19 @@ A Node.js web app for importing and previewing claims-export CSV files. Imported
 
 ## Run
 
-Requires Node.js 18 or newer.
+Requires Node.js 22.12 or newer for the Angular 21 client.
 
 ```sh
-cd src
+cd client
+npm ci
+npm run build
+cd ../src
 npm start
 ```
 
 Open <http://localhost:3000>, then choose a claims-export `.csv` file to import it. The export must include the `Claim Number`, `Provider`, `Service Date`, `Total Charges`, `SavDisc`, `Inelig`, `Ded`, `CoPay`, and `Amount Paid` columns. Claims are matched by `Claim Number`: new claims are inserted, changed claims are updated, and unchanged claims are left as-is. Claims omitted from a later upload remain in the database and appear alongside new imports. The page loads stored claims automatically when opened.
+
+For local frontend development, start the API with `cd src && npm start` and the Angular dev server with `cd client && npm start` in separate terminals. Open <http://localhost:4200>; API requests are proxied to port 3000.
 
 By default, the database is written to `src/data/claims.sqlite` locally and `/app/data/claims.sqlite` in Docker. Set `CLAIMS_DB_PATH` to choose another database file.
 
@@ -21,7 +26,7 @@ Records are grouped automatically by the claim-number prefix before its trailing
 
 The table combines `Claim Number` and `Provider` into one column, showing the provider name subtly beneath the claim number.
 
-For claims with a `Needs Review` status, open the three-dot menu beside the claim number and choose **Review claim** to mark the claim as reviewed and add a comment. Its status then changes to `Reviewed`. A comment icon beside claims with saved comments opens them without adding a table column. Review status and comments are stored separately from imported CSV data, so later CSV uploads update claim details without overwriting reviews. Reviews remain available when the page is reloaded.
+For claims with a `Needs Review` status, open the three-dot menu in the **Status** column and choose **Review claim** to mark the claim as reviewed and add a comment. Its status then changes to `Reviewed`. A comment icon in the **Status** column opens saved comments. Review status and comments are stored separately from imported CSV data, so later CSV uploads update claim details without overwriting reviews. Reviews remain available when the page is reloaded.
 
 Use the status checkboxes to show any combination of `Pending`, `Paid`, `Needs Review`, and `Reviewed` records. All statuses are selected by default, and **Select all** restores the full status selection.
 

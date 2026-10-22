@@ -1,0 +1,165 @@
+<main class="app-shell">
+  <header class="page-header">
+    <div>
+      <h1><img src="favicon.svg" alt="" class="app-icon">Claims Helper</h1>
+      <p class="intro">Help you analyze your claims data by uploading a CSV file.</p>
+    </div>
+    <div class="upload-control">
+      <input
+        #csvInput
+        type="file"
+        accept=".csv,text/csv"
+        (change)="importCsv($event)"
+        [disabled]="loading()"
+        aria-label="Choose claims CSV file"
+      >
+      <button mat-flat-button type="button" (click)="csvInput.click()" [disabled]="loading()">
+        Load CSV file
+      </button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="loading-indicator" role="status">Loading claims…</div>
+  }
+
+  @if (previewVisible()) {
+    <section class="preview" aria-label="Claims preview">
+      <div class="preview-header">
+        <p class="row-count">{{ rowCountText() }}</p>
+        <div class="filter-launcher">
+          <p class="filter-summary">{{ filterSummary() }}</p>
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="openFilters()"
+            aria-haspopup="dialog"
+          >
+            Filters
+            @if (activeFilterCount() > 0) {
+              <span class="filter-count">{{ activeFilterCount() }}</span>
+            }
+          </button>
+        </div>
+      </div>
+
+      <div class="preview-content">
+        <aside class="year-summary" aria-labelledby="summary-title">
+          <h2 id="summary-title">Year totals</h2>
+          <div class="summary-metrics">
+            <mat-card appearance="outlined" class="summary-metric">
+              <span>Ded</span>
+              <strong>{{ formatCurrency(summary().ded) }}</strong>
+            </mat-card>
+            <mat-card appearance="outlined" class="summary-metric">
+              <span>CoPay</span>
+              <strong>{{ formatCurrency(summary().copay) }}</strong>
+            </mat-card>
+            <mat-card appearance="outlined" class="summary-metric">
+              <span>CoIns</span>
+              <strong>{{ formatCurrency(summary().coins) }}</strong>
+            </mat-card>
+            <mat-card appearance="outlined" class="summary-metric summary-grand-total">
+              <span>Combined total</span>
+              <strong>{{ formatCurrency(summary().ded + summary().copay + summary().coins) }}</strong>
+            </mat-card>
+            <mat-card appearance="outlined" class="summary-metric">
+              <span>Total Charges</span>
+              <strong>{{ formatCurrency(summary().charges) }}</strong>
+            </mat-card>
+            <mat-card appearance="outlined" class="summary-metric">
+              <span>SavDisc</span>
+              <strong>{{ formatCurrency(summary().savdisc) }}</strong>
+            </mat-card>
+            <mat-card appearance="outlined" class="summary-metric">
+              <span>Amount Paid</span>
+              <strong>{{ formatCurrency(summary().amountPaid) }}</strong>
+            </mat-card>
+          </div>
+        </aside>
+
+        <div class="table-scroll">
+          <table
+            mat-table
+            [dataSource]="tableRows()"
+            multiTemplateDataRows
+            class="claims-table"
+            aria-label="Claims"
+          >
+            <ng-container matColumnDef="group">
+              <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns().length" class="group-cell">
+                Claim {{ row.group.label }} · {{ row.group.claims.length }}
+                {{ row.group.claims.length === 1 ? 'record' : 'records' }}
+              </td>
+            </ng-container>
+
+            @for (column of displayedColumns(); track column) {
+              <ng-container [matColumnDef]="column">
+                <th mat-header-cell *matHeaderCellDef>{{ column }}</th>
+                <td mat-cell *matCellDef="let row">
+                  @if (row.kind === 'claim') {
+                    @if (column === 'Claim Number') {
+                      <span class="claim-number">{{ claimText(row.claim, 'Claim Number') }}</span>
+                      <span class="claim-provider">{{ claimText(row.claim, 'Provider') }}</span>
+                    } @else if (column === 'Status') {
+                      <div class="status-cell">
+                        <span>{{ row.claim.Status }}</span>
+                        @if (row.claim.Status === 'Needs Review') {
+                          <button
+                            mat-icon-button
+                            type="button"
+                            [matMenuTriggerFor]="reviewMenu"
+                            [attr.aria-label]="'Actions for claim ' + claimText(row.claim, 'Claim Number')"
+                            matTooltip="Claim actions"
+                          >
+                            <span class="more-icon" aria-hidden="true">⋮</span>
+                          </button>
+                          <mat-menu #reviewMenu="matMenu">
+                            <button mat-menu-item type="button" (click)="openReview(row.claim)">
+                              Review claim
+                            </button>
+                          </mat-menu>
+                        }
+                        @if (row.claim.reviewComment) {
+                          <button
+                            mat-icon-button
+                            type="button"
+                            (click)="viewComment(row.claim)"
+                            [attr.aria-label]="'View review comment for claim ' + claimText(row.claim, 'Claim Number')"
+                            matTooltip="View review comment"
+                          >
+                            <svg class="comment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                              <path d="M3 4.5A2.5 2.5 0 0 1 5.5 2h9A2.5 2.5 0 0 1 17 4.5v6a2.5 2.5 0 0 1-2.5 2.5H8l-4.5 4v-5.2A2.5 2.5 0 0 1 3 10.5z"></path>
+                            </svg>
+                          </button>
+                        }
+                      </div>
+                    } @else {
+                      {{ row.claim[column] }}
+                    }
+                  }
+                </td>
+              </ng-container>
+            }
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: ['group']; when: isGroupRow"
+              class="group-row"
+            ></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns(); when: isClaimRow"
+              [class.warning-row]="rowClass(row) === 'warning-row'"
+              [class.info-row]="rowClass(row) === 'info-row'"
+            ></tr>
+          </table>
+          @if (filteredClaims().length === 0) {
+            <p class="empty-state">No claims found for the selected filters.</p>
+          }
+        </div>
+      </div>
+    </section>
+  }
+</main>

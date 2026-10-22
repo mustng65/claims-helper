@@ -4,15 +4,28 @@ const path = require("node:path");
 const Database = require("better-sqlite3");
 
 const port = Number(process.env.PORT) || 3000;
-const publicDirectory = path.join(__dirname, "public");
+const publicDirectory = path.join(__dirname, "dist", "public");
 const databasePath = process.env.CLAIMS_DB_PATH || path.join(__dirname, "data", "claims.sqlite");
 const maxRequestBytes = 10 * 1024 * 1024;
-const files = new Map([
-  ["/", ["index.html", "text/html; charset=utf-8"]],
-  ["/app.js", ["app.js", "text/javascript; charset=utf-8"]],
-  ["/styles.css", ["styles.css", "text/css; charset=utf-8"]],
-  ["/favicon.svg", ["favicon.svg", "image/svg+xml"]],
+const contentTypes = new Map([
+  [".css", "text/css; charset=utf-8"],
+  [".html", "text/html; charset=utf-8"],
+  [".ico", "image/x-icon"],
+  [".js", "text/javascript; charset=utf-8"],
+  [".json", "application/json; charset=utf-8"],
+  [".svg", "image/svg+xml"],
+  [".txt", "text/plain; charset=utf-8"],
+  [".woff", "font/woff"],
+  [".woff2", "font/woff2"],
 ]);
+
+function getStaticCacheControl(filePath) {
+  const fileName = path.basename(filePath);
+  if (fileName === "index.html") return "no-cache";
+  return /-[A-Z0-9_-]{8,}\.(?:js|css)$/i.test(fileName)
+    ? "public, max-age=31536000, immutable"
+    : "public, max-age=3600";
+}
 
 fs.mkdirSync(path.dirname(databasePath), { recursive: true });
 const database = new Database(databasePath);
@@ -256,30 +269,89 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
-  const requestedFile = files.get(pathname);
-  if (request.method !== "GET" || !requestedFile) {
+  if (pathname === "/api" || pathname.startsWith("/api/")) {
+    sendJson(response, 404, { error: "Not found" });
+    return;
+  }
+
+  if (request.method !== "GET") {
     response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     response.end("Not found");
     return;
   }
 
-  const [fileName, contentType] = requestedFile;
-  fs.readFile(path.join(publicDirectory, fileName), (error, content) => {
+  let requestedPath;
+  try {
+    const relativePath = pathname === "/"
+      ? "index.html"
+      : pathname === "/favicon.ico"
+        ? "favicon.svg"
+        : decodeURIComponent(pathname).replace(/^\/+/, "");
+    if (relativePath.includes("\0")) {
+      response.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+      response.end("Invalid path");
+      return;
+    }
+    requestedPath = path.resolve(publicDirectory, relativePath);
+  } catch {
+    response.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    response.end("Invalid path");
+    return;
+  }
+
+  if (
+    requestedPath !== publicDirectory
+    && !requestedPath.startsWith(`${publicDirectory}${path.sep}`)
+  ) {
+    response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    response.end("Not found");
+    return;
+  }
+
+  const serveFile = (filePath) => {
+    fs.readFile(filePath, (error, content) => {
+      if (error) {
+        console.error(`Unable to read ${path.basename(filePath)}:`, error);
+        response.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+        response.end("Unable to load the application.");
+        return;
+      }
+
+      response.writeHead(200, {
+        "Content-Type": contentTypes.get(path.extname(filePath)) || "application/octet-stream",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": getStaticCacheControl(filePath),
+      });
+      response.end(content);
+    });
+  };
+
+  fs.readFile(requestedPath, (error, content) => {
     if (error) {
-      console.error(`Unable to read ${fileName}:`, error);
+      if (error.code === "ENOENT" && path.extname(requestedPath) === "") {
+        serveFile(path.join(publicDirectory, "index.html"));
+        return;
+      }
+      if (error.code === "ENOENT") {
+        response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        response.end("Not found");
+        return;
+      }
+      console.error(`Unable to read ${path.basename(requestedPath)}:`, error);
       response.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
       response.end("Unable to load the application.");
       return;
     }
 
     response.writeHead(200, {
-      "Content-Type": contentType,
+      "Content-Type": contentTypes.get(path.extname(requestedPath)) || "application/octet-stream",
       "X-Content-Type-Options": "nosniff",
+      "Cache-Control": getStaticCacheControl(requestedPath),
     });
     response.end(content);
   });
 });
 
 server.listen(port, () => {
-  console.log(`CSV Loader is running at http://localhost:${port}`);
+  console.log(`Claims Helper is running at http://localhost:${port}`);
 });
