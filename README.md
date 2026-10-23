@@ -8,8 +8,13 @@ Requires Node.js 18 or newer.
 
 ```sh
 cd src
+npm ci
+npm run build
 npm start
 ```
+
+For frontend development with hot reload, run `npm run dev` in `src`; the Vite
+server proxies API requests to the Node server started with `npm start`.
 
 Open <http://localhost:3000>, then choose a claims-export `.csv` file to import it. The export must include the `Claim Number`, `Provider`, `Service Date`, `Total Charges`, `SavDisc`, `Inelig`, `Ded`, `CoPay`, and `Amount Paid` columns. Claims are matched by `Claim Number`: new claims are inserted, changed claims are updated, and unchanged claims are left as-is. Claims omitted from a later upload remain in the database and appear alongside new imports. The page loads stored claims automatically when opened.
 

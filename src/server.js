@@ -5,13 +5,14 @@ const Database = require("better-sqlite3");
 
 const port = Number(process.env.PORT) || 3000;
 const publicDirectory = path.join(__dirname, "public");
+const buildDirectory = path.join(__dirname, "dist");
 const databasePath = process.env.CLAIMS_DB_PATH || path.join(__dirname, "data", "claims.sqlite");
 const maxRequestBytes = 10 * 1024 * 1024;
-const files = new Map([
-  ["/", ["index.html", "text/html; charset=utf-8"]],
-  ["/app.js", ["app.js", "text/javascript; charset=utf-8"]],
-  ["/styles.css", ["styles.css", "text/css; charset=utf-8"]],
-  ["/favicon.svg", ["favicon.svg", "image/svg+xml"]],
+const contentTypes = new Map([
+  [".css", "text/css; charset=utf-8"],
+  [".html", "text/html; charset=utf-8"],
+  [".js", "text/javascript; charset=utf-8"],
+  [".svg", "image/svg+xml"],
 ]);
 
 fs.mkdirSync(path.dirname(databasePath), { recursive: true });
@@ -256,17 +257,29 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
-  const requestedFile = files.get(pathname);
-  if (request.method !== "GET" || !requestedFile) {
+  if (request.method !== "GET") {
     response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     response.end("Not found");
     return;
   }
 
-  const [fileName, contentType] = requestedFile;
-  fs.readFile(path.join(publicDirectory, fileName), (error, content) => {
+  const assetPath = pathname === "/"
+    ? path.join(buildDirectory, "index.html")
+    : pathname === "/favicon.svg"
+      ? path.join(publicDirectory, "favicon.svg")
+      : /^\/assets\/[a-zA-Z0-9._-]+$/.test(pathname)
+        ? path.join(buildDirectory, pathname.slice(1))
+        : null;
+  if (!assetPath) {
+    response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    response.end("Not found");
+    return;
+  }
+
+  const contentType = contentTypes.get(path.extname(assetPath)) || "application/octet-stream";
+  fs.readFile(assetPath, (error, content) => {
     if (error) {
-      console.error(`Unable to read ${fileName}:`, error);
+      console.error(`Unable to read ${assetPath}:`, error);
       response.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
       response.end("Unable to load the application.");
       return;

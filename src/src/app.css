@@ -1,0 +1,417 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: corporate --default;
+}
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: #f4f6f8;
+}
+
+.app-shell {
+  width: min(90vw, 1600px);
+  margin: 32px auto;
+}
+
+.page-header,
+.preview-header,
+.filter-launcher,
+.drawer-header,
+.date-inputs,
+.status-cell,
+.review-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-header {
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: #526477;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  letter-spacing: -0.04em;
+}
+
+.app-icon {
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 0.28em;
+}
+
+.intro,
+.row-count,
+.filter-summary {
+  margin: 0;
+  color: #526477;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.toast-alert {
+  position: fixed;
+  z-index: 20;
+  top: 24px;
+  left: 50%;
+  width: max-content;
+  max-width: min(560px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  box-shadow: 0 8px 28px rgb(23 33 43 / 18%);
+}
+
+.preview {
+  overflow: hidden;
+  border: 1px solid #dce3e9;
+  box-shadow: 0 4px 18px rgb(23 33 43 / 4%);
+}
+
+.preview-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #e8edf1;
+}
+
+.row-count {
+  font-size: 0.9rem;
+}
+
+.filter-launcher {
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.filter-summary {
+  overflow: hidden;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-content {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.15fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.year-summary {
+  min-height: 100%;
+  padding: 20px 18px;
+  border-right: 1px solid #e8edf1;
+  background: #f8fafb;
+}
+
+.year-summary h2 {
+  margin: 0 0 12px;
+  color: #526477;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.summary-metrics {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.summary-payment-metrics {
+  margin-top: 16px;
+}
+
+.summary-metric {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #e2e8ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.summary-metric dt {
+  margin-bottom: 6px;
+  color: #526477;
+  font-size: 0.82rem;
+}
+
+.summary-metric dd {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-grand-total {
+  border-color: #b8c9e8;
+  background: #f0f5ff;
+}
+
+.table-scroll {
+  min-width: 0;
+  max-height: 75vh;
+  overflow: auto;
+}
+
+.claims-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.claims-table th,
+.claims-table td {
+  max-width: 250px;
+  padding: 12px 16px;
+  overflow-wrap: anywhere;
+  /* white-space: pre-wrap; */
+}
+
+.claims-table th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  background: #f8fafb;
+}
+
+.claims-table .group-row td {
+  position: static;
+  background: #eef3f8;
+  font-weight: 650;
+}
+
+.claims-table .info-row td {
+  background: #dff3ff;
+}
+
+.claims-table .warning-row td {
+  background: #fff1cc;
+}
+
+.claim-number,
+.claim-provider {
+  display: block;
+}
+
+.claim-number {
+  font-weight: 600;
+}
+
+.claim-provider {
+  /* margin-top: 3px; */
+  color: #667085;
+  font-size: 0.82rem;
+}
+
+.status-cell {
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.comment-trigger svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.empty-state {
+  padding: 36px !important;
+  color: #526477;
+  text-align: center;
+}
+
+.filters-modal {
+  justify-content: flex-end;
+}
+
+.filters-box {
+  width: min(430px, 100vw);
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  border-radius: 0;
+}
+
+.drawer-header {
+  align-items: flex-start;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8ee;
+}
+
+.drawer-header h2,
+.drawer-header p {
+  margin: 0;
+}
+
+.drawer-header p {
+  margin-top: 4px;
+  color: #526477;
+  font-size: 0.86rem;
+}
+
+.filter-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 12px 0;
+}
+
+.filter-controls {
+  display: grid;
+  gap: 22px;
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: 9px;
+  color: #526477;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.year-tabs,
+.status-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.date-inputs .input {
+  min-width: 0;
+  flex: 1;
+}
+
+.status-option {
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid #dce3e9;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.review-modal .modal-box {
+  width: min(480px, calc(100vw - 32px));
+}
+
+.review-content {
+  display: grid;
+  gap: 12px;
+  padding-top: 18px;
+}
+
+.review-content > label:not(.label) {
+  color: #526477;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.review-actions {
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.empty-panel {
+  align-items: center;
+  padding: 64px 24px;
+  border: 1px solid #dce3e9;
+  text-align: center;
+}
+
+.empty-panel h2 {
+  margin: 12px 0 4px;
+  font-size: 1.3rem;
+}
+
+.empty-panel p {
+  max-width: 440px;
+  margin-bottom: 20px;
+  color: #526477;
+}
+
+.empty-icon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border-radius: 16px;
+  color: #155eef;
+  background: #eef4ff;
+  font-size: 1.8rem;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    width: calc(100% - 28px);
+    margin: 24px auto;
+  }
+
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .preview-header {
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .filter-launcher {
+    max-width: 55%;
+    gap: 8px;
+  }
+
+  .filter-summary {
+    max-width: 36vw;
+    font-size: 0.75rem;
+  }
+
+  .preview-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .year-summary {
+    min-height: auto;
+    padding: 16px 14px;
+    border-right: 0;
+    border-bottom: 1px solid #e8edf1;
+  }
+
+  .summary-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-payment-metrics {
+    margin-top: 8px;
+  }
+
+  .claims-table th,
+  .claims-table td {
+    max-width: 240px;
+    padding: 10px 12px;
+  }
+}

@@ -8,7 +8,9 @@ WORKDIR /app
 COPY --chown=node:node src/ ./
 
 RUN apk add --no-cache --virtual .build-deps python3 make g++ \
-    && npm ci --omit=dev \
+    && npm ci \
+    && npm run build \
+    && npm prune --omit=dev \
     && apk del .build-deps \
     && mkdir -p /app/data \
     && chown node:node /app/data
