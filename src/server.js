@@ -22,6 +22,7 @@ database.exec(`
     id INTEGER PRIMARY KEY,
     claim_number TEXT NOT NULL UNIQUE,
     data TEXT NOT NULL,
+    service_date TEXT,
     reviewed INTEGER NOT NULL DEFAULT 0,
     review_comment TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
@@ -30,6 +31,17 @@ database.exec(`
 `);
 
 const claimColumns = new Set(database.pragma("table_info(claims)").map(({ name }) => name));
+if (!claimColumns.has("service_date")) {
+  database.exec("ALTER TABLE claims ADD COLUMN service_date TEXT");
+  const updateServiceDate = database.prepare("UPDATE claims SET service_date = ? WHERE claim_number = ?");
+  const migrateServiceDates = database.transaction(() => {
+    database.prepare("SELECT claim_number, data FROM claims").all().forEach(({ claim_number, data }) => {
+      const claim = JSON.parse(data);
+      updateServiceDate.run(normalizeServiceDate(claim["Service Date"]), claim_number);
+    });
+  });
+  migrateServiceDates();
+}
 if (!claimColumns.has("reviewed")) {
   database.exec("ALTER TABLE claims ADD COLUMN reviewed INTEGER NOT NULL DEFAULT 0");
 }
@@ -39,16 +51,16 @@ if (!claimColumns.has("review_comment")) {
 
 const selectClaims = database.prepare(`
   SELECT claim_number, data, reviewed, review_comment
-  FROM claims ORDER BY claim_number DESC
+  FROM claims ORDER BY service_date DESC, claim_number DESC
 `);
 const findClaim = database.prepare("SELECT data FROM claims WHERE claim_number = ?");
 const findReview = database.prepare("SELECT reviewed, review_comment FROM claims WHERE claim_number = ?");
 const insertClaim = database.prepare(`
-  INSERT INTO claims (claim_number, data, created_at, updated_at)
-  VALUES (?, ?, ?, ?)
+  INSERT INTO claims (claim_number, service_date, data, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?)
 `);
 const updateClaim = database.prepare(`
-  UPDATE claims SET data = ?, updated_at = ? WHERE claim_number = ?
+  UPDATE claims SET service_date = ?, data = ?, updated_at = ? WHERE claim_number = ?
 `);
 const updateReview = database.prepare(`
   UPDATE claims SET reviewed = ?, review_comment = ? WHERE claim_number = ?
@@ -152,6 +164,28 @@ function validateImport(payload) {
   return claimsByNumber;
 }
 
+function normalizeServiceDate(value) {
+  if (typeof value !== "string") return null;
+
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value.trim());
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  const year = Number(match?.[3] ?? isoMatch?.[1]);
+  const month = Number(match?.[1] ?? isoMatch?.[2]);
+  const day = Number(match?.[2] ?? isoMatch?.[3]);
+  if (!year || !month || !day) return null;
+
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year
+    || date.getUTCMonth() !== month - 1
+    || date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 function stableJson(value) {
   return JSON.stringify(Object.fromEntries(
     Object.keys(value).sort().map((key) => [key, value[key]]),
@@ -167,10 +201,10 @@ function importClaims(payload) {
       const serializedClaim = JSON.stringify(claim);
       const existing = findClaim.get(claimNumber);
       if (!existing) {
-        insertClaim.run(claimNumber, serializedClaim, now, now);
+        insertClaim.run(claimNumber, normalizeServiceDate(claim["Service Date"]), serializedClaim, now, now);
         counts.inserted += 1;
       } else if (stableJson(JSON.parse(existing.data)) !== stableJson(claim)) {
-        updateClaim.run(serializedClaim, now, claimNumber);
+        updateClaim.run(normalizeServiceDate(claim["Service Date"]), serializedClaim, now, claimNumber);
         counts.updated += 1;
       } else {
         counts.unchanged += 1;
