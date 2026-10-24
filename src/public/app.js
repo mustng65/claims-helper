@@ -146,7 +146,7 @@ fileInput.addEventListener("change", async () => {
       records: records.slice(1),
     });
 
-    displayClaims(result.headers, result.records, result.reviews);
+    displayClaims(result.headers, result.records, result.reviews, result.changes);
     showToast(`Created ${result.inserted} new, ${result.updated} updated, and ${result.unchanged} unchanged claims.`, "success");
   } catch (error) {
     showToast(error instanceof Error
@@ -188,10 +188,12 @@ async function requestClaims(url, body, method = body ? "POST" : "GET") {
   return result;
 }
 
-function displayClaims(headers, records, reviews = {}) {
+function displayClaims(headers, records, reviews = {}, changes = {}) {
   const claims = parseClaimsExport([headers, ...records]);
   claims.rows.forEach((claim) => {
     const review = reviews[claim["Claim Number"].trim()];
+    const claimNumber = claim["Claim Number"].trim();
+    claim.importChange = Object.hasOwn(changes, claimNumber) ? changes[claimNumber] : "";
     claim.reviewed = review?.reviewed ?? false;
     claim.reviewComment = review?.comment ?? "";
     claim.originalStatus = claim.Status;
@@ -622,6 +624,14 @@ function renderTable(headers, groups) {
           const claimNumber = document.createElement("span");
           claimNumber.className = "claim-number";
           claimNumber.textContent = claim["Claim Number"];
+          if (claim.importChange) {
+            const changeIndicator = document.createElement("span");
+            changeIndicator.className = `import-change ${claim.importChange}`;
+            changeIndicator.textContent = claim.importChange === "added" ? "Added" : "Updated";
+            changeIndicator.setAttribute("aria-label", `Claim ${claim.importChange} in this import`);
+            changeIndicator.title = `Claim ${claim.importChange} in this import`;
+            claimNumber.append(" ", changeIndicator);
+          }
           const provider = document.createElement("span");
           provider.className = "claim-provider";
           provider.textContent = claim.Provider;

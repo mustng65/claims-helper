@@ -196,15 +196,18 @@ function importClaims(payload) {
   const claimsByNumber = validateImport(payload);
   const now = new Date().toISOString();
   const counts = { inserted: 0, updated: 0, unchanged: 0 };
+  const changes = Object.create(null);
   const saveClaims = database.transaction(() => {
     claimsByNumber.forEach((claim, claimNumber) => {
       const serializedClaim = JSON.stringify(claim);
       const existing = findClaim.get(claimNumber);
       if (!existing) {
         insertClaim.run(claimNumber, normalizeServiceDate(claim["Service Date"]), serializedClaim, now, now);
+        changes[claimNumber] = "added";
         counts.inserted += 1;
       } else if (stableJson(JSON.parse(existing.data)) !== stableJson(claim)) {
         updateClaim.run(normalizeServiceDate(claim["Service Date"]), serializedClaim, now, claimNumber);
+        changes[claimNumber] = "updated";
         counts.updated += 1;
       } else {
         counts.unchanged += 1;
@@ -213,7 +216,7 @@ function importClaims(payload) {
   });
   saveClaims();
 
-  return { ...counts, ...getStoredClaims() };
+  return { ...counts, changes, ...getStoredClaims() };
 }
 
 function saveReview(payload) {

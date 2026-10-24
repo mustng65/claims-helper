@@ -784,6 +784,30 @@ td {
   font-weight: 600;
 }
 
+.import-change {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 650;
+  line-height: 1.4;
+  vertical-align: 1px;
+}
+
+.import-change.added {
+  border-color: #a6d8b5;
+  color: #176b36;
+  background: #effaf2;
+}
+
+.import-change.updated {
+  border-color: #b7d3f8;
+  color: #17345c;
+  background: #eff6ff;
+}
+
 .claim-provider {
   margin-top: 3px;
   color: #667085;
